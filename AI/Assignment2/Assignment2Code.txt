@@ -1,0 +1,132 @@
+% Represents a weighted bidirectional edge
+edge(node1, node2, weight).
+
+% Define all edges between cities here
+edge('Neamt', 'Iasi', 87).
+edge('Iasi', 'Vaslui', 92).
+edge('Vaslui', 'Urziceni', 142).
+edge('Urziceni', 'Hirsova', 98).
+edge('Hirsova', 'Eforie', 86).
+edge('Urziceni', 'Bucharest', 85).
+edge('Bucharest', 'Giurgiu', 90).
+edge('Bucharest', 'Pitesti', 101).
+edge('Bucharest', 'Fagaras', 211).
+edge('Pitesti', 'Craiova', 138).
+edge('Pitesti', 'Rimnicu', 97).
+edge('Craiova', 'Drobeta', 120).
+edge('Craiova', 'Rimnicu', 146).
+edge('Drobeta', 'Mehadia', 75).
+edge('Mehadia', 'Lugoj', 70).
+edge('Lugoj', 'Timisoara', 111).
+edge('Timisoara', 'Arad', 118).
+edge('Arad', 'Zerind', 75).
+edge('Arad', 'Sibiu', 140).
+edge('Zerind', 'Oradea', 71).
+edge('Oradea', 'Sibiu', 151).
+edge('Sibiu', 'Fagaras', 99).
+edge('Sibiu', 'Rimnicu', 80).
+
+% Define the corresponding bidirectional edges
+edge('Iasi', 'Neamt', 87).
+edge('Vaslui', 'Iasi', 92).
+edge('Urziceni', 'Vaslui', 142).
+edge('Hirsova', 'Urziceni', 98).
+edge('Eforie', 'Hirsova', 86).
+edge('Bucharest', 'Urziceni', 85).
+edge('Giurgiu', 'Bucharest', 90).
+edge('Pitesti', 'Bucharest', 101).
+edge('Fagaras', 'Bucharest', 211).
+edge('Craiova', 'Pitesti', 138).
+edge('Rimnicu', 'Pitesti', 97).
+edge('Drobeta', 'Craiova', 120).
+edge('Rimnicu', 'Craiova', 146).
+edge('Mehadia', 'Drobeta', 75).
+edge('Lugoj', 'Mehadia', 70).
+edge('Timisoara', 'Lugoj', 111).
+edge('Arad', 'Timisoara', 118).
+edge('Zerind', 'Arad', 75).
+edge('Sibiu', 'Arad', 140).
+edge('Oradea', 'Zerind', 71).
+edge('Sibiu', 'Oradea', 151).
+edge('Fagaras', 'Sibiu', 99).
+edge('Rimnicu', 'Sibiu', 80).
+
+% --- Depth First Search uses a base case and recursion to check paths
+dfs(Start, Goal, Path, Cost) :-
+    dfs_helper(Start, Goal, [Start], 0, Path, Cost).
+
+% Avoid checking already visited nodes so not to get stuck in a loop
+dfs_helper(Goal, Goal, Path, Cost, Path, Cost).
+dfs_helper(Current, Goal, Visited, CurrentCost, Path, Cost) :-
+    edge(Current, Next, EdgeCost),
+    \+ member(Next, Visited),
+    NewCost is CurrentCost + EdgeCost,
+    dfs_helper(Next, Goal, [Next | Visited], NewCost, Path, Cost).
+
+% --- Breadth First Search
+bfs(Start, Goal, Path, Cost) :-
+    bfs_helper([[Start, 0, [Start]]], [], Goal, Path, Cost).
+
+% Use findall to get all children of current node and append them to the queue
+bfs_helper([[Goal, Cost, Path] | _], _, Goal, Path, Cost).
+bfs_helper([[Current, CurrentCost, PathSoFar] | Rest], Visited, Goal, FinalPath, FinalCost) :-
+    findall([Next, NewCost, [Next | PathSoFar]], 
+            (edge(Current, Next, EdgeCost), 
+             \+ member(Next, Visited),
+             NewCost is CurrentCost + EdgeCost),
+            Neighbors),
+    append(Rest, Neighbors, Queue),
+    append([Current], Visited, NewVisited),
+    bfs_helper(Queue, NewVisited, Goal, FinalPath, FinalCost).
+
+% --- Greedy search uses heuristics to perform an informed search
+greedy_search(Start, Goal, Path, Cost) :-
+    heuristic(Start, Goal, StartH),
+    greedy_helper([[Start, StartH, [Start]]], [], Goal, Path, Cost).
+
+% Greedy Helper uses a queue with the format [Node, Heuristic, Path]
+greedy_helper([[Goal, _, Path] | _], _, Goal, Path, Cost) :-
+    calculate_cost(Path, Cost).
+
+% Use findall to get children and append them to the queue based on their heuristic priority
+greedy_helper([[Current, _Heuristic, PathSoFar] | Rest], Visited, Goal, FinalPath, FinalCost) :-
+    findall([Next, NextH, [Next | PathSoFar]], 
+            (edge(Current, Next, _),
+             \+ member(Next, Visited),
+             heuristic(Next, Goal, NextH)),
+            Neighbors),
+    append(Rest, Neighbors, Queue),
+    % Sort priority with lower heuristics
+    sort(2, @=<, Queue, SortedQueue),
+    greedy_helper(SortedQueue, [Current | Visited], Goal, FinalPath, FinalCost).
+
+% Used to calculate the cost of the path for greedy_helper
+calculate_cost([_], 0).
+calculate_cost([From, To | Rest], Cost) :-
+    edge(From, To, EdgeCost),
+    calculate_cost([To | Rest], RestCost),
+    Cost is EdgeCost + RestCost.
+
+
+
+% Set heuristics
+heuristic('Neamt', 'Bucharest', 300).
+heuristic('Iasi', 'Bucharest', 200).
+heuristic('Vaslui', 'Bucharest', 150).
+heuristic('Urziceni', 'Bucharest', 85).
+heuristic('Hirsova', 'Bucharest', 100).
+heuristic('Eforie', 'Bucharest', 120).
+heuristic('Bucharest', 'Bucharest', 0).
+heuristic('Giurgiu', 'Bucharest', 90).
+heuristic('Pitesti', 'Bucharest', 101).
+heuristic('Fagaras', 'Bucharest', 211).
+heuristic('Craiova', 'Bucharest', 120).
+heuristic('Rimnicu', 'Bucharest', 80).
+heuristic('Drobeta', 'Bucharest', 110).
+heuristic('Mehadia', 'Bucharest', 130).
+heuristic('Lugoj', 'Bucharest', 150).
+heuristic('Timisoara', 'Bucharest', 170).
+heuristic('Arad', 'Bucharest', 180).
+heuristic('Zerind', 'Bucharest', 160).
+heuristic('Sibiu', 'Bucharest', 120).
+heuristic('Oradea', 'Bucharest', 150).
