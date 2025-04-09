@@ -1,4 +1,6 @@
-
+"""
+Generate the block steps for the report
+"""
 
 on='on'
 table='table'

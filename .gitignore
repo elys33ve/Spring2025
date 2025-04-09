@@ -4,4 +4,6 @@ __pycache__/
 *.exe
 **/*.exe
 **/**/*.exe
+notes.txt
+
 
