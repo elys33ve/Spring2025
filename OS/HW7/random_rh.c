@@ -5,10 +5,10 @@
 #include <unistd.h>
 
 /*
-random_arbiter.c:  
-    modified version of random_noprotection.c that implements the arbiter (waiter) solution.
+random_rh.c: 
+    modified version of random_noprotection.c that implements the resource hierarchy solution.
 
-gcc -o random_arbiter random_arbiter.c && ./random_arbiter
+gcc -o random_rh random_rh.c && ./random_rh
 */
 
 /* =========================================================================== */
@@ -21,71 +21,14 @@ pthread_mutex_t chopstick[PHILOSOPHER_COUNT];
 int MEALS_ON_TABLE = AVAILABLE_MEALS;
 pthread_mutex_t MEAL_COUNT_LOCK;
 
-typedef struct {
-    int philosopher_state[PHILOSOPHER_COUNT];   // 0 - thinking, 1 - waiting, 2 - eating
-    pthread_mutex_t mutex;
-    pthread_cond_t cond[PHILOSOPHER_COUNT];
-} arbiter_t;
-arbiter_t arbiter;
-
-/* =========================================================================== */
-
-
-void initialize_arbiter() {
-    for (int i=0; i<PHILOSOPHER_COUNT; ++i) {
-        arbiter.philosopher_state[i] = 0;       // set everyone to "thinking"
-        pthread_cond_init(&arbiter.cond[i], NULL);
-    }
-    pthread_mutex_init(&arbiter.mutex, NULL);
-}
-
-// --- request chopsticks
-void request_chopsticks(int philosopher_id, int chopstick_1, int chopstick_2) {
-    pthread_mutex_lock(&arbiter.mutex);
-    arbiter.philosopher_state[philosopher_id] = 1;  // set to "waiting"
-
-    // wait for both chopsticks
-    while (1) {
-        // try locking chopsticks
-        if (pthread_mutex_trylock(&chopstick[chopstick_1]) == 0) {
-            if (pthread_mutex_trylock(&chopstick[chopstick_2]) == 0) {
-                break;  // got both chopsticks
-            } else {
-                // failed second chopstick, release first and wait
-                pthread_mutex_unlock(&chopstick[chopstick_1]);
-            }
-        }
-        pthread_cond_wait(&arbiter.cond[philosopher_id], &arbiter.mutex);
-    }
-
-    arbiter.philosopher_state[philosopher_id] = 2;  // set to "eating"
-    pthread_mutex_unlock(&arbiter.mutex);
-}
-
-// --- release chopsticks
-void release_chopsticks(int philosopher_id, int chopstick_1, int chopstick_2) {
-    pthread_mutex_lock(&arbiter.mutex);
-
-    arbiter.philosopher_state[philosopher_id] = 0;  // set to "thinking"
-    pthread_mutex_unlock(&chopstick[chopstick_1]);
-    pthread_mutex_unlock(&chopstick[chopstick_2]);
-
-    // signal others to try to eat
-    for (int i=0; i<PHILOSOPHER_COUNT; ++i) {
-        pthread_cond_signal(&arbiter.cond[i]);
-    }
-    pthread_mutex_unlock(&arbiter.mutex);
-}
-
-
 /* =========================================================================== */
 
 void *philosopher_program(int philosopher_number) {  
     // the philosopher will think and eat until all the meals are gone
-
     int how_many_times_did_I_eat = 0;
-    int chopstick_1, chopstick_2;
-
+    int chopstick_1;
+    int chopstick_2;
+    
     while (MEALS_ON_TABLE > 0) { 
         // philosophers think before they eat
         //printf("Philosopher %d is thinking\n", philosopher_number);
@@ -95,8 +38,13 @@ void *philosopher_program(int philosopher_number) {
         chopstick_1 = rand() % PHILOSOPHER_COUNT;
         do chopstick_2 = rand() % PHILOSOPHER_COUNT;
         while (chopstick_1 == chopstick_2);
+
+        // after thinking, grabs the lower numbered chopstick
         //printf("Philosopher %d wants chopsticks %d and %d\n", philosopher_number, chopstick_1, chopstick_2);
-        request_chopsticks(philosopher_number, chopstick_1, chopstick_2);
+        int first = chopstick_1 < chopstick_2 ? chopstick_1 : chopstick_2;
+        int second = chopstick_1 < chopstick_2 ? chopstick_2 : chopstick_1;
+        pthread_mutex_lock(&chopstick[first]);
+        pthread_mutex_lock(&chopstick[second]);
 
         // philosopher eats for twice as much time as thinking
         //printf("Philosopher %d is ready to eat\n", philosopher_number);
@@ -113,7 +61,8 @@ void *philosopher_program(int philosopher_number) {
             //printf("Philosopher %d didn't eat because no food was left\n", philosopher_number);
         }
             
-        release_chopsticks(philosopher_number, chopstick_1, chopstick_2);
+        pthread_mutex_unlock(&chopstick[first]);
+        pthread_mutex_unlock(&chopstick[second]);
         //printf("Philosopher %d has placed chopsticks on the table\n", philosopher_number);
     } 
 
@@ -150,7 +99,5 @@ int main() {
 
    return 0;
 }
-
-
 
 
