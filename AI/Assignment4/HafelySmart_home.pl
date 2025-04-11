@@ -6,9 +6,6 @@
     - Temperature sensor
     - Thermostat
     - Power supply
-
-    Usage example:
-    problog hw4.pl -q 'query_name_here.'
 */
 
 /* ========================= TASK 1 ========================= */
@@ -71,32 +68,35 @@ incorrect_temp_reading :- temperature_set(high), not(temp_reading_high).
 
 /* ------------ World State Observations & Evidence ------------ */
 
-% evidence(movement(living_room), false).
-% evidence(light_switch_on, false).
-% evidence(temperature_set(high), false).
-% evidence(power_failure, true).
-% evidence(faulty_thermostat, true).
-% evidence(faulty_temp_sensor, true).
-% evidence(faulty_light_sensor, true).
-% evidence(faulty_motion_sensor(hallway), true).
+/* ------------ Set 1 ------------ */
+% Living room motion detected, light detected
+evidence(movement(living_room), true).
+evidence(light_on, true).
+
+/* ------------ Set 2 ------------ */
+% Heating on, no heat detected
+%evidence(temperature_set(high), true).
+%evidence(temp_reading_high, false).
+
+/* ------------ Set 3 ------------ */
+% Light switch on, heat off
+%evidence(light_switch_on, true).
+%evidence(heating_on, false).
+
+/* ------------ Set 4 ------------ */
+% Power failure
+%evidence(power_failure, true).
+
+/* ------------ Set 5 ------------ */
+% Motion in hallway, faulty temp reading
+%evidence(movement(hallway), true).
+%evidence(faulty_temp_sensor, true).
 
 /* ------------ Queries ------------ */
-query(motion_detected(living_room)).
-query(motion_detected(hallway)).
 
-query(light_on).
-
-query(heating_on).
-query(temp_reading_high).
-
-/*
-query(faulty_motion_sensor(living_room)).
 query(faulty_motion_sensor(hallway)).
+query(faulty_motion_sensor(living_room)).
+query(power_failure).
 query(faulty_light_sensor).
 query(faulty_temp_sensor).
 query(faulty_thermostat).
-query(power_failure).
-
-query(no_heating).
-query(incorrect_temp_reading).
-*/
