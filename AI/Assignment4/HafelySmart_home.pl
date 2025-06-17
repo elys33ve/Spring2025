@@ -6,17 +6,26 @@
     - Temperature sensor
     - Thermostat
     - Power supply
+    
+    HafelySmart_home.pl
 */
 
 /* ========================= TASK 1 ========================= */
 
 /* ------------ Probabilistic Facts: Component Failure Rates ------------ */
-
+/*
 0.05::faulty_motion_sensor(living_room). 
 0.05::faulty_motion_sensor(hallway).
 0.02::faulty_light_sensor.
 0.03::faulty_temp_sensor.
 0.01::faulty_thermostat.
+0.01::power_failure.
+*/
+0.03::faulty_motion_sensor(living_room). 
+0.03::faulty_motion_sensor(hallway).
+0.01::faulty_light_sensor.
+0.04::faulty_temp_sensor.
+0.02::faulty_thermostat.
 0.01::power_failure.
 
 
@@ -70,8 +79,8 @@ incorrect_temp_reading :- temperature_set(high), not(temp_reading_high).
 
 /* ------------ Set 1 ------------ */
 % Living room motion detected, light detected
-evidence(movement(living_room), true).
-evidence(light_on, true).
+%evidence(movement(living_room), true).
+%evidence(light_on, true).
 
 /* ------------ Set 2 ------------ */
 % Heating on, no heat detected
@@ -89,8 +98,8 @@ evidence(light_on, true).
 
 /* ------------ Set 5 ------------ */
 % Motion in hallway, faulty temp reading
-%evidence(movement(hallway), true).
-%evidence(faulty_temp_sensor, true).
+evidence(movement(hallway), true).
+evidence(faulty_temp_sensor, true).
 
 /* ------------ Queries ------------ */
 
